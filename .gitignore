@@ -1,0 +1,5 @@
+/vendor
+/temp/*
+/log/*
+
+!.gitkeep
