@@ -115,7 +115,11 @@ class VoiceMatcher
 
     private function searchStart($text)
     {
-        $rows = dibi::query('SELECT * FROM [voices] WHERE [text] LIKE %s', $text . '%')->fetchAll();
+        if (\Nette\Utils\Strings::length($text) < 5) {
+            return;
+        }
+
+        $rows = dibi::query('SELECT * FROM [voices] WHERE [text] LIKE %s OR [text] LIKE %s', $text . '%', '「' . $text . '%')->fetchAll();
         if (count($rows) === 1) {
             $this->lastFile = $rows[0]['file'];
             return $rows[0]['voice'];
@@ -125,11 +129,10 @@ class VoiceMatcher
             return;
         }
 
-        $rows = dibi::query('SELECT * FROM [voices] WHERE [text] LIKE %s AND file = %s', $text . '%', $this->lastFile)->fetchAll();
+        $rows = dibi::query('SELECT * FROM [voices] WHERE ([text] LIKE %s OR [text] LIKE %s) AND file = %s', '「' . $text . '%', $text . '%', $this->lastFile)->fetchAll();
         if (count($rows) === 1) {
             return $rows[0]['voice'];
         }
-
     }
 
     private function searchLevenshtein($text)
@@ -152,7 +155,6 @@ class VoiceMatcher
         if (count($rows) === 1) {
             return $rows[0]['voice'];
         }
-
     }
 
     private function removeDot($text)
