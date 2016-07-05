@@ -40,15 +40,17 @@ function processFile($filename)
     $output = fopen($filename . '.new', 'w');
     $inserted = 0;
     $i = 0;
+    $lastVoice = null;
     while (!feof($file)) {
         ++$i;
         $line = fgets($file);
         if (strpos($line, 'OutputLine(') !== false) {
             if ($match = \Nette\Utils\Strings::match($line, '~^\\s++OutputLine\\(NULL,\\s++"([^"]++)"~')) {
                 $voice = $matcher->findVoice(\Nette\Utils\Strings::trim($match[1]));
-                if ($voice) {
+                if ($voice && $lastVoice !== $voice) {
                     ++$inserted;
                     fwrite($output, "\tPlaySE(4, \"$voice\", 128, 64);\n");
+                    $lastVoice = $voice;
                 }
             }
         }
