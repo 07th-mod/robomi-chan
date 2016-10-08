@@ -60,7 +60,7 @@ function processFile($filename)
     fclose($output);
     unlink($filename);
     rename($filename . '.new', $filename);
-    
+
     echo "Inserted $inserted voice lines to " . pathinfo($filename, PATHINFO_BASENAME) . ".\n";
 }
 
