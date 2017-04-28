@@ -7,10 +7,9 @@ require __DIR__ . '/vendor/autoload.php';
 require __DIR__ . '/functions.php';
 
 dibi::connect([
-    'driver' => 'mysql',
-    'host' => 'localhost',
+    'driver' => 'pdo',
+    'dsn' => 'mysql:host=localhost;dbname=higurashi',
     'username' => 'root',
-    'password' => '',
-    'database' => 'higurashi',
+    'password' => 'root',
     'charset' => 'utf8',
 ]);
