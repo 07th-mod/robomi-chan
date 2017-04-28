@@ -34,25 +34,15 @@ function saveLine($lineNumber, $line, $file)
 
 function processFile($filename)
 {
-    $matcher = new VoiceMatcher();
     $file = fopen($filename, 'r');
     @unlink($filename . '.new');
     $output = fopen($filename . '.new', 'w');
-    $inserted = 0;
-    $i = 0;
-    $lastVoice = null;
+    $processor = lineProcessor();
     while (!feof($file)) {
-        ++$i;
         $line = fgets($file);
-        if (strpos($line, 'OutputLine(') !== false) {
-            if ($match = \Nette\Utils\Strings::match($line, '~^\\s++OutputLine\\(NULL,\\s++"([^"]++)"~')) {
-                $voice = $matcher->findVoice(\Nette\Utils\Strings::trim($match[1]));
-                if ($voice && $lastVoice !== $voice) {
-                    ++$inserted;
-                    fwrite($output, "\tPlaySE(4, \"$voice\", 128, 64);\n");
-                    $lastVoice = $voice;
-                }
-            }
+        $voiceLine = $processor->send($line);
+        if ($voiceLine) {
+            fwrite($output, $voiceLine);
         }
         fwrite($output, $line);
     }
@@ -61,7 +51,55 @@ function processFile($filename)
     unlink($filename);
     rename($filename . '.new', $filename);
 
-    echo "Inserted $inserted voice lines to " . pathinfo($filename, PATHINFO_BASENAME) . ".\n";
+    $processor->send(null);
+    list($inserted, $placeholders, $longQuotes) = $processor->getReturn();
+    echo "Done with file " . pathinfo($filename, PATHINFO_BASENAME) . ".\n";
+    echo "- inserted $inserted voice lines\n";
+    echo "- inserted $placeholders placeholders\n";
+    echo "- found $longQuotes long quotes\n";
+}
+
+function lineProcessor(): Generator
+{
+    $inserted = 0;
+    $placeholders = 0;
+    $longQuotes = 0;
+    $i = 0;
+    $lastVoice = null;
+    $quote = false;
+    $voiceLine = null;
+    $matcher = new VoiceMatcher();
+
+    while (is_string($line = yield $voiceLine)) {
+        $voiceLine = null;
+
+        ++$i;
+        if (strpos($line, 'OutputLine(') !== false) {
+            if ($match = \Nette\Utils\Strings::match($line, '~^\\s++OutputLine\\(NULL,\\s++"([^"]++)"~')) {
+                $text = \Nette\Utils\Strings::trim($match[1]);
+
+                if (\Nette\Utils\Strings::startsWith($text, '「')) {
+                    $quote = true;
+                }
+
+                $voice = $matcher->findVoice($text);
+                if ($voice && $lastVoice !== $voice) {
+                    ++$inserted;
+                    $voiceLine = "\tPlaySE(4, \"$voice\", 128, 64);\n";
+                    $lastVoice = $voice;
+                } elseif ($quote) {
+                    ++$placeholders;
+                    $voiceLine = "\tPlaySE(4, \"\", 128, 64);\n";
+                }
+
+                if (\Nette\Utils\Strings::endsWith($text, '」')) {
+                    $quote = false;
+                }
+            }
+        }
+    }
+
+    return [$inserted, $placeholders, $longQuotes];
 }
 
 class VoiceMatcher

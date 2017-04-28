@@ -1,4 +1,4 @@
-**Requirements: PHP 5.4+, Composer, MySQL**
+**Requirements: PHP 7.1+, Composer, MySQL**
 
 1) Install dependencies using composer.
 
