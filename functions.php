@@ -67,6 +67,7 @@ function lineProcessor(): Generator
     $i = 0;
     $lastVoice = null;
     $quote = false;
+    $linesSinceQuote = 0;
     $voiceLine = null;
     $matcher = new VoiceMatcher();
 
@@ -80,7 +81,10 @@ function lineProcessor(): Generator
 
                 if (\Nette\Utils\Strings::startsWith($text, '「')) {
                     $quote = true;
+                    $linesSinceQuote = 0;
                 }
+
+                ++$linesSinceQuote;
 
                 $voice = $matcher->findVoice($text);
                 if ($voice && $lastVoice !== $voice) {
@@ -90,6 +94,14 @@ function lineProcessor(): Generator
                 } elseif ($quote) {
                     ++$placeholders;
                     $voiceLine = "\tPlaySE(4, \"\", 128, 64);\n";
+
+                    // If a quote is too long assume the ending quote is missing.
+                    if ($linesSinceQuote >= 10) {
+                        //$voiceLine .= "\t// long quote\n";
+                        $linesSinceQuote = 0;
+                        $quote = false;
+                        ++$longQuotes;
+                    }
                 }
 
                 if (\Nette\Utils\Strings::endsWith($text, '」')) {
