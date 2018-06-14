@@ -24,9 +24,17 @@ function saveLine($lineNumber, $line, $file)
 
     list($voice, $text) = $parts;
 
+    $voice = \Nette\Utils\Strings::trim($voice);
+    $text = \Nette\Utils\Strings::trim($text);
+
+    $rows = dibi::query('SELECT * FROM [voices] WHERE [voice] = %s AND [text] = %s', $voice, $text)->fetchAll();
+    if ($rows) {
+        return;
+    }
+
     dibi::query('INSERT INTO [voices]', [
-        'text' => \Nette\Utils\Strings::trim($text),
-        'voice' => \Nette\Utils\Strings::trim($voice),
+        'text' => $text,
+        'voice' => $voice,
         'file' => $file,
         'line' => $lineNumber,
     ]);

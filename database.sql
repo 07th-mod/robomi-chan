@@ -6,6 +6,10 @@ CREATE TABLE `voices` (
   `line` int NOT NULL
 );
 
+ALTER TABLE `voices`
+ADD INDEX `text` (`text`(20)),
+ADD INDEX `voice` (`voice`(25));
+
 -- levenshtein and levenshtein_ratio functions for MySQL
 -- http://stackoverflow.com/questions/4671378/levenshtein-mysql-php
 
