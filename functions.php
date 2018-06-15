@@ -94,7 +94,7 @@ function lineProcessor(): Generator
 
                 ++$linesSinceQuote;
 
-                $voice = $matcher->findVoice($text);
+                $voice = $matcher->findVoice($text, $quote);
                 if ($voice && $lastVoice !== $voice) {
                     ++$inserted;
                     $voiceLine = "\tPlaySE(4, \"$voice\", 128, 64);\n";
@@ -126,8 +126,12 @@ class VoiceMatcher
 {
     private $lastFile = null;
 
-    public function findVoice($text)
+    public function findVoice($text, $quote)
     {
+        if (! $quote) {
+            return;
+        }
+
         $text = strtr($text, [
             '〜' => '～',
         ]);
@@ -148,7 +152,11 @@ class VoiceMatcher
             return $match;
         }
 
-        if ($match = $this->searchLevenshtein($text)) {
+        if ($match = $this->searchLevenshteinWithMatchigMiddle($text)) {
+            return $match;
+        }
+
+        if ($match = $this->searchLevenshteinWithMatchingPrefix($text)) {
             return $match;
         }
     }
@@ -193,7 +201,7 @@ class VoiceMatcher
         }
     }
 
-    private function searchLevenshtein($text)
+    private function searchLevenshteinWithMatchigMiddle($text)
     {
         $cut = round(\Nette\Utils\Strings::length($text) / 5);
         if ($cut <= 1) {
@@ -209,7 +217,20 @@ class VoiceMatcher
             return;
         }
 
-        $rows = dibi::query('SELECT * FROM [voices] WHERE [text] LIKE %s AND levenshtein_ratio([text], %s) >= 90 AND file = %s', '%' . \Nette\Utils\Strings::subString($text, $cut, -$cut) . '%', $text, $this->lastFile)->fetchAll();
+        $rows = dibi::query('SELECT * FROM [voices] WHERE [file] = %s AND [text] LIKE %s AND levenshtein_ratio([text], %s) >= 90', $this->lastFile, '%' . \Nette\Utils\Strings::subString($text, $cut, -$cut) . '%', $text)->fetchAll();
+        if (count($rows) === 1) {
+            return $rows[0]['voice'];
+        }
+    }
+
+    private function searchLevenshteinWithMatchingPrefix($text)
+    {
+        $cut = 3;
+        if (!$this->lastFile) {
+            return;
+        }
+
+        $rows = dibi::query('SELECT * FROM [voices] WHERE [file] = %s AND [text] LIKE %s AND levenshtein_ratio([text], %s) >= 85', $this->lastFile, \Nette\Utils\Strings::subString($text, 0, $cut) . '%', $text)->fetchAll();
         if (count($rows) === 1) {
             return $rows[0]['voice'];
         }
