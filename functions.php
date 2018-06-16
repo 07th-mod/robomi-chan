@@ -43,17 +43,24 @@ function saveLine($lineNumber, $line, $file)
 function processFile($filename)
 {
     $file = fopen($filename, 'r');
-    @unlink($filename . '.new');
-    $output = fopen($filename . '.new', 'w');
     $processor = lineProcessor();
+    global $buffer;
+    $buffer = [];
     while (!feof($file)) {
         $line = fgets($file);
         $voiceLine = $processor->send($line);
         if ($voiceLine) {
-            fwrite($output, $voiceLine);
+            $buffer[] = $voiceLine;
         }
+        $buffer[] = $line;
+    }
+
+    @unlink($filename . '.new');
+    $output = fopen($filename . '.new', 'w');
+    foreach ($buffer as $line) {
         fwrite($output, $line);
     }
+
     fclose($file);
     fclose($output);
     unlink($filename);
@@ -99,6 +106,10 @@ function lineProcessor(): Generator
                     ++$inserted;
                     $voiceLine = "\tPlaySE(4, \"$voice\", 128, 64);\n";
                     $lastVoice = $voice;
+                    if (matchPreviousVoice($voice)) {
+                        ++$inserted;
+                        --$placeholders;
+                    };
                 } elseif ($quote) {
                     ++$placeholders;
                     $voiceLine = "\tPlaySE(4, \"\", 128, 64);\n";
@@ -120,6 +131,35 @@ function lineProcessor(): Generator
     }
 
     return [$inserted, $placeholders, $longQuotes];
+}
+
+function matchPreviousVoice($voice)
+{
+    global $buffer;
+
+    $end = count($buffer) - 1;
+    for ($i = $end; $i >=0 && $i >= $end - 3; --$i) {
+        if ($match = \Nette\Utils\Strings::match($buffer[$i], '~^\\s++OutputLine\\(NULL,\\s++"([^"]++)"~')) {
+            break;
+        }
+    }
+
+    if (!$match || $buffer[$i - 1] !== "\tPlaySE(4, \"\", 128, 64);\n") {
+        return false;
+    }
+
+    $numberMatch = \Nette\Utils\Strings::match($voice, '~([1-9][0-9]*)$~');
+    $number = $numberMatch[1];
+    $candidate = substr($voice, 0, -strlen($number)) . ($number - 1);
+
+    $text = dibi::query('SELECT [text] FROM [voices] WHERE [voice] = %s', $candidate)->fetchSingle();
+    if ($text === $match[1]) {
+        $buffer[$i - 1] = "\tPlaySE(4, \"$candidate\", 128, 64);\n";
+
+        return true;
+    }
+
+    return false;
 }
 
 class VoiceMatcher
