@@ -104,7 +104,13 @@ function lineProcessor(): Generator
                 $voice = $matcher->findVoice($text, $quote);
                 if ($voice && $lastVoice !== $voice) {
                     ++$inserted;
-                    $voiceLine = "\tPlaySE(4, \"$voice\", 128, 64);\n";
+                    $voices = explode('|', $voice);
+                    $voiceLine = '';
+                    $j = 4;
+                    foreach ($voices as $voice) {
+                        $voiceLine .= "\tPlaySE($j, \"$voice\", 128, 64);\n";
+                        ++$j;
+                    }
                     $lastVoice = $voice;
                     if (matchPreviousVoice($voice)) {
                         ++$inserted;
