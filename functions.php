@@ -108,7 +108,8 @@ function lineProcessor(): Generator
                     $voiceLine = '';
                     $j = 4;
                     foreach ($voices as $voice) {
-                        $voiceLine .= "\tPlaySE($j, \"$voice\", 128, 64);\n";
+                        $voice = \Nette\Utils\Strings::lower($voice);
+                        $voiceLine .= "\tPlaySE($j, \"ps3/$voice\", 128, 64);\n";
                         ++$j;
                     }
                     $lastVoice = $voice;
