@@ -157,9 +157,9 @@ function matchPreviousVoice($voice)
 
     $numberMatch = \Nette\Utils\Strings::match($voice, '~([1-9][0-9]*)$~');
     $number = $numberMatch[1];
-    $candidate = substr($voice, 0, -strlen($number)) . ($number - 1);
+    $candidate = substr($voice, 4, -strlen($number)) . ($number - 1);
 
-    $text = dibi::query('SELECT [text] FROM [voices] WHERE [voice] = %s', $candidate)->fetchSingle();
+    $text = dibi::query('SELECT [text] FROM [voices] WHERE LOWER([voice]) = %s', $candidate)->fetchSingle();
     if ($text === $match[1]) {
         $buffer[$i - 1] = "\tPlaySE(4, \"$candidate\", 128, 64);\n";
 
