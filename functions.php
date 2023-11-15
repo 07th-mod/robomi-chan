@@ -91,7 +91,7 @@ function lineProcessor(): Generator
 
         ++$i;
         if (strpos($line, 'OutputLine(') !== false) {
-            if ($match = \Nette\Utils\Strings::match($line, '~^\\s++OutputLine\\(NULL,\\s++"([^"]++)"~')) {
+            if ($match = \Nette\Utils\Strings::match($line, '~^\\s++OutputLine\\((?:NULL|"[^"]*"),\\s++"([^"]++)"~')) {
                 $text = \Nette\Utils\Strings::trim($match[1]);
 
                 if (\Nette\Utils\Strings::startsWith($text, '「')) {
@@ -146,7 +146,7 @@ function matchPreviousVoice($voice)
 
     $end = count($buffer) - 1;
     for ($i = $end; $i >=0 && $i >= $end - 3; --$i) {
-        if ($match = \Nette\Utils\Strings::match($buffer[$i], '~^\\s++OutputLine\\(NULL,\\s++"([^"]++)"~')) {
+        if ($match = \Nette\Utils\Strings::match($buffer[$i], '~^\\s++OutputLine\\((?:NULL|"[^"]*"),\\s++"([^"]++)"~')) {
             break;
         }
     }
