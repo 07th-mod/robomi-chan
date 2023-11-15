@@ -9,5 +9,6 @@ $files = \Nette\Utils\Finder::findFiles('s*.txt')
     ->in(__DIR__ . '/dev');
 
 foreach ($files as $file) {
+    echo 'Loading file ' . $file->getFilename() . PHP_EOL;
     loadFile($file->getPathname());
 }
