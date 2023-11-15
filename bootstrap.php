@@ -8,8 +8,8 @@ require __DIR__ . '/functions.php';
 
 dibi::connect([
     'driver' => 'pdo',
-    'dsn' => 'mysql:host=localhost;dbname=higurashi',
-    'username' => 'root',
-    'password' => 'root',
+    'dsn' => 'mysql:host=mysql;port=3306;dbname=higurashi',
+    'username' => 'higurashi',
+    'password' => 'hanyu',
     'charset' => 'utf8',
 ]);
